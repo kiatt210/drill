@@ -21,10 +21,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.SerializableString;
 import com.fasterxml.jackson.core.io.CharacterEscapes;
+import com.fasterxml.jackson.databind.ser.PropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.drill.common.util.JacksonUtils;
 import org.apache.drill.exec.store.SchemaFactory;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.calcite.schema.SchemaPlus;
@@ -51,6 +55,9 @@ import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 public class DescribeSchemaHandler extends DefaultSqlHandler {
   private static final Logger logger = LoggerFactory.getLogger(DescribeSchemaHandler.class);
 
+  private static final PropertyFilter passwordFilter = new SimpleBeanPropertyFilter.SerializeExceptFilter(Sets.newHashSet("password"));
+  private static final SimpleFilterProvider filterProvider = new SimpleFilterProvider().addFilter("password", passwordFilter);
+
   @SuppressWarnings("serial")
   private static final ObjectMapper mapper = JacksonUtils.createObjectMapper(
       new JsonFactory().setCharacterEscapes(new CharacterEscapes() {
@@ -70,6 +77,10 @@ public class DescribeSchemaHandler extends DefaultSqlHandler {
     }
   })).enable(INDENT_OUTPUT);
 
+  static{
+      filterProvider.addFilter("passwordFilter", passwordFilter);
+      mapper.setFilterProvider(filterProvider);
+  }
 
   public DescribeSchemaHandler(SqlHandlerConfig config) {
     super(config);
